@@ -1,0 +1,224 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  TRAINER
+  CLIENT
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  PAUSED
+}
+
+enum VisitStatus {
+  IN_GYM
+  COMPLETED
+}
+
+model User {
+  id            String              @id @default(cuid())
+  email         String              @unique
+  passwordHash  String              @map("password_hash")
+  role          Role
+  profileData   Json?               @map("profile_data")
+
+  subscriptions UserSubscription[]
+  visits        Visit[]
+  achievements  UserAchievement[]
+  refreshTokens RefreshToken[]
+  xpProgress    XpProgress?
+  bookings      Booking[]
+  classesTaught Class[]             @relation("UserClassesTaught")
+
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model MembershipType {
+  id              String              @id @default(cuid())
+  name            String
+  durationDays    Int                 @map("duration_days")
+  visitsLimit     Int?                @map("visits_limit")
+  price           Decimal
+  accessibleZones String[]            @map("accessible_zones")
+
+  subscriptions   UserSubscription[]
+
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+
+  @@map("membership_types")
+}
+
+model UserSubscription {
+  id               String             @id @default(cuid())
+  userId           String             @map("user_id")
+  typeId           String             @map("type_id")
+  startDate        DateTime           @map("start_date")
+  endDate          DateTime           @map("end_date")
+  remainingVisits  Int?               @map("remaining_visits")
+  status           SubscriptionStatus
+
+  user             User               @relation(fields: [userId], references: [id])
+  type             MembershipType     @relation(fields: [typeId], references: [id])
+  visits           Visit[]
+
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([typeId])
+  @@map("user_subscriptions")
+}
+
+model GymZone {
+  id               String    @id @default(cuid())
+  name             String    @unique
+  maxCapacity      Int       @map("max_capacity")
+  currentOccupancy Int       @default(0) @map("current_occupancy")
+
+  visits           Visit[]
+  classes          Class[]
+
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@map("gym_zones")
+}
+
+model Visit {
+  id             String      @id @default(cuid())
+  userId         String      @map("user_id")
+  subscriptionId String?     @map("subscription_id")
+  zoneId         String      @map("zone_id")
+  checkInTime    DateTime    @map("check_in_time")
+  checkOutTime   DateTime?   @map("check_out_time")
+  status         VisitStatus
+
+  user           User        @relation(fields: [userId], references: [id])
+  subscription   UserSubscription? @relation(fields: [subscriptionId], references: [id])
+  zone           GymZone     @relation(fields: [zoneId], references: [id])
+
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([zoneId])
+  @@map("visits")
+}
+
+model Achievement {
+  id          String            @id @default(cuid())
+  name        String            @unique
+  icon        String
+  description String?
+
+  users       UserAchievement[]
+
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id             String       @id @default(cuid())
+  userId         String       @map("user_id")
+  achievementId  String       @map("achievement_id")
+  earnedAt       DateTime     @default(now()) @map("earned_at")
+
+  user           User         @relation(fields: [userId], references: [id])
+  achievement    Achievement  @relation(fields: [achievementId], references: [id])
+
+  @@unique([userId, achievementId])
+  @@index([achievementId])
+  @@map("user_achievements")
+}
+
+model RefreshToken {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  tokenHash  String   @map("token_hash")
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model XpProgress {
+  id              String    @id @default(cuid())
+  userId          String    @unique @map("user_id")
+  level           Int       @default(1)
+  xpTotal         Int       @default(0) @map("xp_total")
+  xpThisLevel     Int       @default(0) @map("xp_this_level")
+  xpToNextLevel   Int       @default(100) @map("xp_to_next_level")
+  lastLevelUpAt   DateTime? @map("last_level_up_at")
+
+  user            User      @relation(fields: [userId], references: [id])
+
+  @@map("xp_progress")
+}
+
+model Equipment {
+  id             String   @id @default(cuid())
+  name           String
+  type           String
+  serialNumber   String?  @map("serial_number")
+  status         String   @default("ACTIVE")
+  lastServiceAt  DateTime? @map("last_service_at")
+  nextServiceAt  DateTime? @map("next_service_at")
+  metadata       Json?
+
+  @@index([status])
+  @@map("equipment")
+}
+
+model Class {
+  id             String    @id @default(cuid())
+  title          String
+  description    String?
+  trainerId      String    @map("trainer_id")
+  zoneId         String    @map("zone_id")
+  startTime      DateTime  @map("start_time")
+  endTime        DateTime  @map("end_time")
+  capacity       Int
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  trainer        User      @relation("UserClassesTaught", fields: [trainerId], references: [id])
+  zone           GymZone   @relation(fields: [zoneId], references: [id])
+  bookings       Booking[]
+
+  @@index([trainerId])
+  @@index([zoneId])
+  @@map("classes")
+}
+
+model Booking {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  classId   String   @map("class_id")
+  status    String   @default("CONFIRMED")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id])
+  class     Class    @relation(fields: [classId], references: [id])
+
+  @@unique([userId, classId])
+  @@index([classId])
+  @@map("bookings")
+}
