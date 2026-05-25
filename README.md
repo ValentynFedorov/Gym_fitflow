@@ -15,6 +15,45 @@ Monorepo layout:
 
 ---
 
+## Quick Start (Windows, one command)
+
+If you're on Windows and have **Node.js 18+**, **Docker Desktop** (running) and **Git** installed, just run:
+
+```powershell
+git clone https://github.com/ValentynFedorov/Gym_fitflow.git
+cd Gym_fitflow
+./setup.ps1
+```
+
+`setup.ps1` will:
+
+1. Check prerequisites (Node, npm, Docker, Git).
+2. Create `.env` from `.env.example` on first run.
+3. Start Postgres + Redis via `docker compose`.
+4. Install npm workspaces.
+5. Run `prisma generate` + `prisma db push` to create the schema.
+6. Seed demo data (admin / trainer / client accounts).
+7. Launch the API (http://localhost:3001) and Web (http://localhost:3000) together.
+
+Useful flags:
+
+```powershell
+./setup.ps1 -SkipInstall -SkipSeed   # daily run, just bring services up & launch
+./setup.ps1 -Reset                   # wipe DB volume and start fresh
+./setup.ps1 -Stop                    # stop Postgres + Redis containers
+./setup.ps1 -SkipDocker              # use an existing local Postgres/Redis
+```
+
+If PowerShell refuses to execute the script, allow local scripts for this session once:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
+
+> macOS / Linux users — follow the manual steps below.
+
+---
+
 ## 1. Prerequisites
 
 - Node.js 18+ (recommended) and npm
