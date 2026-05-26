@@ -6,16 +6,27 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Seeding FitFlow OS dev data...');
 
-  // Clean up existing data (dev only!)
+  // Clean up existing data (dev only!).
+  // Use TRUNCATE ... CASCADE so we don't have to hand-maintain the deletion
+  // order of every FK relationship. Lists every table from prisma/schema.prisma
+  // (the @@map names). RESTART IDENTITY resets any sequences.
   console.log('Clearing existing data...');
-  await prisma.userAchievement.deleteMany();
-  await prisma.visit.deleteMany();
-  await prisma.userSubscription.deleteMany();
-  await prisma.achievement.deleteMany();
-  await prisma.gymZone.deleteMany();
-  await prisma.refreshToken.deleteMany();
-  await prisma.membershipType.deleteMany();
-  await prisma.user.deleteMany();
+  await prisma.$executeRawUnsafe(`
+    TRUNCATE TABLE
+      "bookings",
+      "classes",
+      "equipment",
+      "xp_progress",
+      "refresh_tokens",
+      "user_achievements",
+      "achievements",
+      "visits",
+      "user_subscriptions",
+      "membership_types",
+      "gym_zones",
+      "users"
+    RESTART IDENTITY CASCADE
+  `);
 
   // Create zones
   console.log('Creating gym zones...');

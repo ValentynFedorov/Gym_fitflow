@@ -49,3 +49,8 @@ Thumbs.db
 
 # Misc
 .git-credentials
+
+# Added by setup.ps1
+docker-compose.override.yml
+setup-run*.log
+setup-run*.err.log
