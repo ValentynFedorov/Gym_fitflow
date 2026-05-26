@@ -141,8 +141,18 @@ function Get-PortHolder {
 # Docker helpers
 # ============================================================================
 function Test-DockerDaemon {
-    & docker info *> $null
-    return ($LASTEXITCODE -eq 0)
+    # Fast path: check Docker's named pipes. `docker info` itself hangs for
+    # 30-60s when the daemon is down, which would block our wait-loop and
+    # make the script look frozen right after "docker CLI present".
+    foreach ($pipe in @('docker_engine', 'dockerDesktopLinuxEngine')) {
+        if (Test-Path "\\.\pipe\$pipe") {
+            # Pipe exists — daemon is up. Confirm with a quick API call so
+            # we don't fool ourselves with stale pipe handles.
+            & docker version --format '{{.Server.Version}}' *> $null
+            return ($LASTEXITCODE -eq 0)
+        }
+    }
+    return $false
 }
 
 function Start-DockerDesktopIfNeeded {
