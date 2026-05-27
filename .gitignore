@@ -54,3 +54,5 @@ Thumbs.db
 docker-compose.override.yml
 setup-run*.log
 setup-run*.err.log
+diagnose-report.md
+test-api-report.md

@@ -7,6 +7,7 @@ import ThemeToggle from "./ThemeToggle";
 const CLIENT_LINKS = [
   { href: "/client",                label: "Overview" },
   { href: "/client/classes",        label: "Classes" },
+  { href: "/client/equipment",      label: "Equipment" },
   { href: "/client/metrics",        label: "Metrics" },
   { href: "/client/workout-plan",   label: "AI Plan" },
   { href: "/dashboard/wrapped",     label: "Wrapped" },

@@ -89,15 +89,16 @@ export function FitFlowHeroScene() {
                 />
             </mesh>
 
-            {/* PLATES RIGHT */}
-            <Plate x={0.95} radius={0.26} width={0.16} color="#22c55e" />
-            <Plate x={0.82} radius={0.22} width={0.12} color="#16a34a" />
-            <Plate x={0.7} radius={0.18} width={0.1} color="#38bdf8" />
+            {/* PLATES RIGHT — largest plate sits closest to the bar collar,
+                smallest on the outside (real-barbell ordering). */}
+            <Plate x={0.62} radius={0.26} width={0.16} color="#22c55e" />
+            <Plate x={0.80} radius={0.22} width={0.12} color="#16a34a" />
+            <Plate x={0.95} radius={0.18} width={0.10} color="#38bdf8" />
 
             {/* PLATES LEFT */}
-            <Plate x={-0.95} radius={0.26} width={0.16} color="#22c55e" />
-            <Plate x={-0.82} radius={0.22} width={0.12} color="#16a34a" />
-            <Plate x={-0.7} radius={0.18} width={0.1} color="#38bdf8" />
+            <Plate x={-0.62} radius={0.26} width={0.16} color="#22c55e" />
+            <Plate x={-0.80} radius={0.22} width={0.12} color="#16a34a" />
+            <Plate x={-0.95} radius={0.18} width={0.10} color="#38bdf8" />
 
             {/* COLLARS */}
             <mesh

@@ -30,6 +30,18 @@ enum BookingStatus {
   CANCELLED
 }
 
+enum IncidentStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum IncidentSeverity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
 model User {
   id            String              @id @default(cuid())
   email         String              @unique
@@ -207,8 +219,32 @@ model Equipment {
   nextServiceAt  DateTime? @map("next_service_at")
   metadata       Json?
 
+  incidents      EquipmentIncident[]
+
   @@index([status])
   @@map("equipment")
+}
+
+// A trainer or client flags a piece of equipment as broken / problematic.
+// Admins resolve it (and the equipment row's status is bumped to NEEDS_REPAIR
+// while the incident is OPEN/IN_PROGRESS).
+model EquipmentIncident {
+  id            String           @id @default(cuid())
+  equipmentId   String           @map("equipment_id")
+  reportedById  String           @map("reported_by_id")
+  status        IncidentStatus   @default(OPEN)
+  severity      IncidentSeverity @default(MEDIUM)
+  note          String?
+  resolvedAt    DateTime?        @map("resolved_at")
+  resolvedById  String?          @map("resolved_by_id")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt      @map("updated_at")
+
+  equipment     Equipment        @relation(fields: [equipmentId], references: [id])
+
+  @@index([status])
+  @@index([equipmentId])
+  @@map("equipment_incidents")
 }
 
 model Class {

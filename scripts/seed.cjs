@@ -13,6 +13,7 @@ async function main() {
   console.log('Clearing existing data...');
   await prisma.$executeRawUnsafe(`
     TRUNCATE TABLE
+      "equipment_incidents",
       "trainer_ratings",
       "body_metrics",
       "bookings",
@@ -267,6 +268,38 @@ async function main() {
       },
     ],
   });
+
+  // A couple of seeded incidents so the admin inbox isn't empty on first load.
+  console.log('Seeding equipment incidents...');
+  const broken = await prisma.equipment.findFirst({ where: { name: 'Treadmill A2' } });
+  if (broken) {
+    await prisma.equipmentIncident.create({
+      data: {
+        equipmentId: broken.id,
+        reportedById: trainer.id,
+        severity: 'HIGH',
+        status: 'OPEN',
+        note: 'Belt slips under load — needs immediate inspection.',
+      },
+    });
+    // Flip it visibly to NEEDS_REPAIR
+    await prisma.equipment.update({
+      where: { id: broken.id },
+      data: { status: 'NEEDS_REPAIR' },
+    });
+  }
+  const bench = await prisma.equipment.findFirst({ where: { name: 'Bench Press B1' } });
+  if (bench) {
+    await prisma.equipmentIncident.create({
+      data: {
+        equipmentId: bench.id,
+        reportedById: client.id,
+        severity: 'LOW',
+        status: 'IN_PROGRESS',
+        note: 'Cushion is starting to tear on the right side.',
+      },
+    });
+  }
 
   // Create classes
   console.log('Creating sample classes...');
