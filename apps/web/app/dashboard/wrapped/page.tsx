@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import WrappedPdfButton from "../../../components/WrappedPdfButton";
+import Heatmap from "../../../components/Heatmap";
 
 interface FavoriteZone {
   name: string;
@@ -71,9 +73,17 @@ export default function WrappedPage() {
         slidesOrder.length],
     );
 
+  const userId = typeof window !== "undefined" ? localStorage.getItem("fitflow_userId") : null;
+
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50">
-      <div className="relative h-[540px] w-full max-w-4xl overflow-hidden rounded-3xl border border-slate-700/60 bg-slate-950/90 shadow-[0_0_120px_rgba(56,189,248,0.35)]">
+    <main className="space-y-6">
+      {report && (
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">FitFlow Wrapped • {String(report.month).padStart(2, "0")}/{report.year}</h2>
+          <WrappedPdfButton report={report} />
+        </div>
+      )}
+      <div className="relative h-[540px] w-full overflow-hidden rounded-3xl border border-slate-700/60 bg-slate-950/90 shadow-[0_0_120px_rgba(56,189,248,0.35)]">
         {error && !report && (
           <div className="flex h-full items-center justify-center text-sm text-slate-400">
             {error}
@@ -127,6 +137,7 @@ export default function WrappedPage() {
           </button>
         </div>
       </div>
+      {userId && <Heatmap userId={userId} days={90} title="Your last 90 days" />}
     </main>
   );
 }

@@ -8,6 +8,8 @@ import TopClients from '../../components/TopClients';
 import AdminEventStreamTile from '../../components/AdminEventStreamTile';
 import LeaderboardTile from '../../components/LeaderboardTile';
 import TrainerClassesOverview from '../../components/TrainerClassesOverview';
+import Heatmap from '../../components/Heatmap';
+import TrainerLeaderboard from '../../components/TrainerLeaderboard';
 
 export default function AdminDashboardPage() {
   const [role, setRole] = useState<string | null>(null);
@@ -80,6 +82,12 @@ export default function AdminDashboardPage() {
         </div>
         <TopClients />
         <AdminEventStreamTile />
+      </section>
+      <section className="mt-4 grid gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <Heatmap days={90} title="Visits — last 90 days (everyone)" />
+        </div>
+        <TrainerLeaderboard />
       </section>
       <section className="mt-4">
         <RecentVisitsTable />

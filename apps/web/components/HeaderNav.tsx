@@ -2,24 +2,29 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import ThemeToggle from "./ThemeToggle";
 
 const CLIENT_LINKS = [
-  { href: "/client", label: "Overview" },
-  { href: "/client/classes", label: "Classes" },
-  { href: "/dashboard/wrapped", label: "Wrapped" },
+  { href: "/client",                label: "Overview" },
+  { href: "/client/classes",        label: "Classes" },
+  { href: "/client/metrics",        label: "Metrics" },
+  { href: "/client/workout-plan",   label: "AI Plan" },
+  { href: "/dashboard/wrapped",     label: "Wrapped" },
 ];
 
 const ADMIN_LINKS = [
-  { href: "/admin", label: "Dashboard" },
-  { href: "/admin/classes", label: "Classes" },
-  { href: "/admin/equipment", label: "Equipment" },
-  { href: "/dashboard/wrapped", label: "Wrapped" },
+  { href: "/admin",                label: "Dashboard" },
+  { href: "/admin/floor-plan",     label: "Floor Plan" },
+  { href: "/admin/classes",        label: "Classes" },
+  { href: "/admin/equipment",      label: "Equipment" },
+  { href: "/dashboard/wrapped",    label: "Wrapped" },
 ];
 
 const TRAINER_LINKS = [
-  { href: "/admin", label: "Trainer Console" },
-  { href: "/admin/classes", label: "My Classes" },
-  { href: "/dashboard/wrapped", label: "Members Wrapped" },
+  { href: "/admin",                label: "Trainer Console" },
+  { href: "/admin/floor-plan",     label: "Floor Plan" },
+  { href: "/admin/classes",        label: "My Classes" },
+  { href: "/dashboard/wrapped",    label: "Members Wrapped" },
 ];
 
 export default function HeaderNav() {
@@ -46,7 +51,6 @@ export default function HeaderNav() {
   else if (role === "TRAINER") links = TRAINER_LINKS;
   else if (role === "CLIENT") links = CLIENT_LINKS;
 
-  // When not logged in, show minimal auth nav
   if (!role) {
     return (
       <header className="mb-8 flex items-center justify-between">
@@ -54,6 +58,7 @@ export default function HeaderNav() {
           FitFlow <span className="text-accent-emerald">OS</span>
         </h1>
         <nav className="flex items-center gap-3 text-sm text-slate-300">
+          <ThemeToggle />
           <button
             onClick={() => router.push("/")}
             className="rounded-full bg-accent-blue px-4 py-1 text-xs font-semibold text-slate-900"
@@ -66,13 +71,13 @@ export default function HeaderNav() {
   }
 
   return (
-    <header className="mb-8 flex items-center justify-between">
+    <header className="mb-8 flex flex-wrap items-center justify-between gap-3">
       <h1 className="text-2xl font-bold tracking-tight">
         FitFlow <span className="text-accent-emerald">OS</span>
       </h1>
-      <nav className="flex items-center gap-2 text-xs text-slate-300">
+      <nav className="flex flex-wrap items-center gap-2 text-xs text-slate-300">
         {links.map((link) => {
-          const active = pathname.startsWith(link.href);
+          const active = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
           return (
             <button
               key={link.href}
@@ -87,6 +92,7 @@ export default function HeaderNav() {
             </button>
           );
         })}
+        <ThemeToggle />
         <button
           onClick={onLogout}
           className="ml-2 rounded-full border border-slate-600 px-3 py-1 text-xs text-slate-300 hover:border-red-400 hover:text-red-300"
