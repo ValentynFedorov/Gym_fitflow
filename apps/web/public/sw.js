@@ -1,7 +1,7 @@
 /* Minimal service worker for FitFlow OS — caches the app shell so the page
    loads while offline. API calls are deliberately not cached (always live). */
 
-const CACHE = 'fitflow-shell-v1';
+const CACHE = 'fitflow-shell-v2';
 const SHELL = ['/', '/manifest.webmanifest', '/icon-192.svg', '/icon-512.svg'];
 
 self.addEventListener('install', (e) => {
