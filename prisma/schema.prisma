@@ -24,6 +24,12 @@ enum VisitStatus {
   COMPLETED
 }
 
+enum BookingStatus {
+  CONFIRMED
+  WAITLIST
+  CANCELLED
+}
+
 model User {
   id            String              @id @default(cuid())
   email         String              @unique
@@ -38,6 +44,9 @@ model User {
   xpProgress    XpProgress?
   bookings      Booking[]
   classesTaught Class[]             @relation("UserClassesTaught")
+  ratingsGiven  TrainerRating[]     @relation("RaterRatings")
+  ratingsTaken  TrainerRating[]     @relation("TrainerRatings")
+  bodyMetrics   BodyMetric[]
 
   createdAt     DateTime            @default(now()) @map("created_at")
   updatedAt     DateTime            @updatedAt @map("updated_at")
@@ -88,6 +97,14 @@ model GymZone {
   maxCapacity      Int       @map("max_capacity")
   currentOccupancy Int       @default(0) @map("current_occupancy")
 
+  // SVG floor-plan positioning (percentages of the floor SVG viewBox).
+  // Defaults keep older zones invisible (0/0) until placed.
+  positionX        Float     @default(0) @map("position_x")
+  positionY        Float     @default(0) @map("position_y")
+  width            Float     @default(20)
+  height           Float     @default(20)
+  color            String    @default("#38bdf8")
+
   visits           Visit[]
   classes          Class[]
 
@@ -104,6 +121,7 @@ model Visit {
   zoneId         String      @map("zone_id")
   checkInTime    DateTime    @map("check_in_time")
   checkOutTime   DateTime?   @map("check_out_time")
+  durationMin    Int?        @map("duration_min")
   status         VisitStatus
 
   user           User        @relation(fields: [userId], references: [id])
@@ -115,6 +133,7 @@ model Visit {
 
   @@index([userId])
   @@index([zoneId])
+  @@index([checkInTime])
   @@map("visits")
 }
 
@@ -168,6 +187,11 @@ model XpProgress {
   xpToNextLevel   Int       @default(100) @map("xp_to_next_level")
   lastLevelUpAt   DateTime? @map("last_level_up_at")
 
+  // Streak tracking (updated on every COMPLETED visit + nightly cron).
+  currentStreak   Int       @default(0) @map("current_streak")
+  longestStreak   Int       @default(0) @map("longest_streak")
+  lastVisitDate   DateTime? @map("last_visit_date") @db.Date
+
   user            User      @relation(fields: [userId], references: [id])
 
   @@map("xp_progress")
@@ -202,6 +226,7 @@ model Class {
   trainer        User      @relation("UserClassesTaught", fields: [trainerId], references: [id])
   zone           GymZone   @relation(fields: [zoneId], references: [id])
   bookings       Booking[]
+  ratings        TrainerRating[]
 
   @@index([trainerId])
   @@index([zoneId])
@@ -209,16 +234,56 @@ model Class {
 }
 
 model Booking {
-  id        String   @id @default(cuid())
-  userId    String   @map("user_id")
-  classId   String   @map("class_id")
-  status    String   @default("CONFIRMED")
-  createdAt DateTime @default(now()) @map("created_at")
+  id        String        @id @default(cuid())
+  userId    String        @map("user_id")
+  classId   String        @map("class_id")
+  status    BookingStatus @default(CONFIRMED)
+  position  Int?          // 1-based position when on waitlist; null when CONFIRMED
+  createdAt DateTime      @default(now()) @map("created_at")
 
-  user      User     @relation(fields: [userId], references: [id])
-  class     Class    @relation(fields: [classId], references: [id])
+  user      User          @relation(fields: [userId], references: [id])
+  class     Class         @relation(fields: [classId], references: [id])
 
   @@unique([userId, classId])
-  @@index([classId])
+  @@index([classId, status])
   @@map("bookings")
+}
+
+// Client rates trainer after a class. One rating per (user, class).
+model TrainerRating {
+  id         String   @id @default(cuid())
+  classId    String   @map("class_id")
+  trainerId  String   @map("trainer_id")
+  raterId    String   @map("rater_id")
+  stars      Int      // 1-5
+  comment    String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  class      Class    @relation(fields: [classId], references: [id])
+  trainer    User     @relation("TrainerRatings", fields: [trainerId], references: [id])
+  rater      User     @relation("RaterRatings",  fields: [raterId],   references: [id])
+
+  @@unique([classId, raterId])
+  @@index([trainerId])
+  @@map("trainer_ratings")
+}
+
+// Body-metrics time series (client only). Values are optional so the user can
+// log just one of weightKg / chestCm / etc on any given day.
+model BodyMetric {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  recordedAt  DateTime @default(now()) @map("recorded_at")
+  weightKg    Float?   @map("weight_kg")
+  heightCm    Float?   @map("height_cm")
+  chestCm     Float?   @map("chest_cm")
+  waistCm     Float?   @map("waist_cm")
+  hipCm       Float?   @map("hip_cm")
+  bodyFatPct  Float?   @map("body_fat_pct")
+  note        String?
+
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, recordedAt])
+  @@map("body_metrics")
 }

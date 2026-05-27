@@ -35,4 +35,20 @@ export class DashboardController {
     const n = limit ? parseInt(limit, 10) : 10;
     return this.dashboardService.topClients(Number.isNaN(n) ? 10 : n);
   }
+
+  // Live floor-plan snapshot — used by /admin/floor-plan as the initial
+  // payload before socket updates take over.
+  @Get('floor-plan')
+  @Roles(Role.ADMIN, Role.TRAINER)
+  async floorPlan() {
+    return this.dashboardService.floorPlan();
+  }
+
+  // Visits-per-day heatmap series. ?userId scopes to a specific user.
+  @Get('heatmap')
+  @Roles(Role.ADMIN, Role.TRAINER, Role.CLIENT)
+  async heatmap(@Query('userId') userId?: string, @Query('days') days?: string) {
+    const n = days ? parseInt(days, 10) : 90;
+    return this.dashboardService.heatmap(userId, Number.isNaN(n) ? 90 : n);
+  }
 }

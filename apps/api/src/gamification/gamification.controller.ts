@@ -1,5 +1,6 @@
 import { Controller, ForbiddenException, Get, Param, Query, Req, UseGuards } from '@nestjs/common';
 import { GamificationService } from './gamification.service';
+import { StreakService } from './streak.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -7,7 +8,22 @@ import { Role } from '@prisma/client';
 
 @Controller('gamification')
 export class GamificationController {
-  constructor(private readonly gamificationService: GamificationService) {}
+  constructor(
+    private readonly gamificationService: GamificationService,
+    private readonly streakService: StreakService,
+  ) {}
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('streak/:userId')
+  async streak(@Param('userId') userId: string, @Req() req: any) {
+    const current = req.user as { id: string; role: Role };
+    const isSelf = current.id === userId;
+    const isStaff = current.role === Role.ADMIN || current.role === Role.TRAINER;
+    if (!isSelf && !isStaff) {
+      throw new ForbiddenException('Not allowed to view streak for this user');
+    }
+    return this.streakService.getStreakForUser(userId);
+  }
 
   @Get('achievements')
   list() {

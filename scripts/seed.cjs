@@ -13,6 +13,8 @@ async function main() {
   console.log('Clearing existing data...');
   await prisma.$executeRawUnsafe(`
     TRUNCATE TABLE
+      "trainer_ratings",
+      "body_metrics",
       "bookings",
       "classes",
       "equipment",
@@ -35,6 +37,8 @@ async function main() {
       name: 'Main Hall',
       maxCapacity: 50,
       currentOccupancy: 0,
+      positionX: 5, positionY: 10, width: 50, height: 60,
+      color: '#22d3ee',
     },
   });
 
@@ -43,6 +47,18 @@ async function main() {
       name: 'Cardio Zone',
       maxCapacity: 30,
       currentOccupancy: 0,
+      positionX: 60, positionY: 10, width: 35, height: 35,
+      color: '#f472b6',
+    },
+  });
+
+  const stretchZone = await prisma.gymZone.create({
+    data: {
+      name: 'Stretch & Yoga',
+      maxCapacity: 20,
+      currentOccupancy: 0,
+      positionX: 60, positionY: 50, width: 35, height: 25,
+      color: '#a78bfa',
     },
   });
 
@@ -325,6 +341,71 @@ async function main() {
         achievementId: consistencyKing.id,
       },
     ],
+  });
+
+  // Body metrics history for main client (weekly weigh-ins, last ~10 weeks)
+  console.log('Creating body metrics history...');
+  const metricsData = [];
+  let weight = 84.5;
+  let waist = 92;
+  for (let i = 9; i >= 0; i--) {
+    const recordedAt = new Date(now.getTime() - i * 7 * 24 * 60 * 60 * 1000);
+    weight -= 0.3 + Math.random() * 0.4;
+    waist -= 0.2 + Math.random() * 0.3;
+    metricsData.push({
+      userId: client.id,
+      recordedAt,
+      weightKg:   +weight.toFixed(1),
+      waistCm:    +waist.toFixed(1),
+      chestCm:    +(102 - i * 0.1).toFixed(1),
+      bodyFatPct: +(22 - i * 0.2).toFixed(1),
+    });
+  }
+  await prisma.bodyMetric.createMany({ data: metricsData });
+
+  // A couple of trainer ratings on the past HIIT booker subset (synthetic past class)
+  console.log('Creating trainer ratings...');
+  const ratedClass = await prisma.class.create({
+    data: {
+      title: 'Last Week HIIT',
+      description: 'Past class used for ratings demo.',
+      trainerId: trainer.id,
+      zoneId: cardioZone.id,
+      startTime: new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000),
+      endTime:   new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000),
+      capacity: 20,
+    },
+  });
+  await prisma.trainerRating.createMany({
+    data: sampleBookers.slice(0, 6).map((u, i) => ({
+      classId: ratedClass.id,
+      trainerId: trainer.id,
+      raterId: u.id,
+      stars: 4 + (i % 2), // mix of 4s and 5s
+      comment: i === 0 ? 'Killer session, loved it!' : null,
+    })),
+  });
+
+  // Streak demo for main client — 5 consecutive days ending today
+  console.log('Seeding streak progress for main client...');
+  const today = new Date(now); today.setHours(0,0,0,0);
+  await prisma.xpProgress.upsert({
+    where: { userId: client.id },
+    create: {
+      userId: client.id,
+      level: 4,
+      xpTotal: 620,
+      xpThisLevel: 40,
+      xpToNextLevel: 200,
+      currentStreak: 5,
+      longestStreak: 12,
+      lastVisitDate: today,
+    },
+    update: {
+      currentStreak: 5,
+      longestStreak: 12,
+      lastVisitDate: today,
+    },
   });
 
   console.log('Seeding complete.');

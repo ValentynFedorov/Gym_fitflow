@@ -5,6 +5,7 @@ import { OccupancyGateway } from '../websocket/occupancy.gateway';
 import { Role, SubscriptionStatus, VisitStatus } from '@prisma/client';
 import { RedisService } from '../redis/redis.service';
 import { XpService } from '../gamification/xp.service';
+import { StreakService } from '../gamification/streak.service';
 import { AttendanceDomainEvent } from '../domain/attendance.events';
 
 @Injectable()
@@ -16,6 +17,7 @@ export class AttendanceService {
     private readonly occupancyGateway: OccupancyGateway,
     private readonly redisService: RedisService,
     private readonly xpService: XpService,
+    private readonly streakService: StreakService,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -200,6 +202,7 @@ export class AttendanceService {
     );
 
     await this.xpService.handleEvent(event);
+    await this.streakService.handleEvent(event);
     return updatedVisit;
   }
 }

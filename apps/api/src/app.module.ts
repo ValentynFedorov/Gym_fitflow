@@ -11,6 +11,9 @@ import { GamificationModule } from './gamification/gamification.module';
 import { WebsocketModule } from './websocket/websocket.module';
 import { ClassesModule } from './classes/classes.module';
 import { EquipmentModule } from './equipment/equipment.module';
+import { RatingsModule } from './ratings/ratings.module';
+import { MetricsModule } from './metrics/metrics.module';
+import { AiModule } from './ai/ai.module';
 import { MockController } from './mock.controller';
 
 @Module({
@@ -27,6 +30,9 @@ import { MockController } from './mock.controller';
     GamificationModule,
     ClassesModule,
     EquipmentModule,
+    RatingsModule,
+    MetricsModule,
+    AiModule,
   ],
   controllers: [MockController],
 })

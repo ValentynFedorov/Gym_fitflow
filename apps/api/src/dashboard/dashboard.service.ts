@@ -116,4 +116,83 @@ export class DashboardService {
       visitCount: Number(r.visit_count),
     }));
   }
+
+  /**
+   * Floor-plan snapshot: each zone with its SVG positioning, current
+   * occupancy/capacity, and a small list of in-gym visit dots (rendered as
+   * little circles within the zone rectangle).
+   */
+  async floorPlan() {
+    const zones = await this.prisma.gymZone.findMany({
+      orderBy: { name: 'asc' },
+    });
+
+    const liveVisits = await this.prisma.visit.findMany({
+      where: { status: 'IN_GYM' },
+      select: { id: true, zoneId: true, userId: true, checkInTime: true },
+    });
+
+    const byZone = new Map<string, typeof liveVisits>();
+    for (const v of liveVisits) {
+      const list = byZone.get(v.zoneId) ?? [];
+      list.push(v);
+      byZone.set(v.zoneId, list);
+    }
+
+    return zones.map((z) => ({
+      id: z.id,
+      name: z.name,
+      x: z.positionX,
+      y: z.positionY,
+      width: z.width,
+      height: z.height,
+      color: z.color,
+      maxCapacity: z.maxCapacity,
+      currentOccupancy: z.currentOccupancy,
+      visits: (byZone.get(z.id) ?? []).map((v) => ({
+        id: v.id,
+        userId: v.userId,
+        checkInTime: v.checkInTime,
+      })),
+    }));
+  }
+
+  /**
+   * GitHub-style heatmap source: visit count per day for the last N days
+   * (default 90). Used by the calendar grid component on the client.
+   */
+  async heatmap(userId?: string, days = 90) {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - (days - 1));
+
+    const rows = await this.prisma.$queryRawUnsafe<
+      { day: any; count: any }[]
+    >(
+      `SELECT DATE_TRUNC('day', "check_in_time") as day, COUNT(*)::int as count
+       FROM "visits"
+       WHERE "check_in_time" >= $1::timestamp
+         ${userId ? `AND "user_id" = $2` : ''}
+       GROUP BY day
+       ORDER BY day ASC`,
+      start,
+      ...(userId ? [userId] : []),
+    );
+
+    const map = new Map<string, number>(
+      rows.map((r) => [new Date(r.day).toISOString().slice(0, 10), Number(r.count)]),
+    );
+
+    // Densify: emit every day in window, even zero-count, so the grid is contiguous.
+    const series: { date: string; count: number }[] = [];
+    for (let i = 0; i < days; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      const iso = d.toISOString().slice(0, 10);
+      series.push({ date: iso, count: map.get(iso) ?? 0 });
+    }
+
+    const max = series.reduce((m, s) => Math.max(m, s.count), 0);
+    return { days, start: start.toISOString(), max, series };
+  }
 }
