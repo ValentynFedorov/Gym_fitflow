@@ -14,6 +14,7 @@ import { EquipmentModule } from './equipment/equipment.module';
 import { RatingsModule } from './ratings/ratings.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { AiModule } from './ai/ai.module';
+import { HoursModule } from './hours/hours.module';
 import { MockController } from './mock.controller';
 
 @Module({
@@ -33,6 +34,7 @@ import { MockController } from './mock.controller';
     RatingsModule,
     MetricsModule,
     AiModule,
+    HoursModule,
   ],
   controllers: [MockController],
 })

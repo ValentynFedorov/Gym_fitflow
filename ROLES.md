@@ -92,6 +92,9 @@ Legend: ✅ allowed · ❌ forbidden · ⭕ allowed only for own data ·
 | `PATCH /equipment/incidents/:id` (resolve / progress) | ✅ | ❌ | ❌ |
 | **AI** |
 | `POST /ai/workout-plan` | ✅ | ✅ | ✅ |
+| **Gym hours** |
+| `GET /gym-hours` / `/gym-hours/status` | 🔓 | 🔓 | 🔓 |
+| `PUT /gym-hours/:dayOfWeek` | ✅ | ❌ | ❌ |
 | **Attendance** |
 | `GET /attendance/me/open` | ✅ | ✅ | ✅ |
 | `POST /attendance/check-in` (with optional `userId` for staff) | ✅ | ✅ | ✅ |
@@ -103,7 +106,7 @@ Header nav adapts to `localStorage.fitflow_role`:
 
 | Role | Top-level routes |
 |---|---|
-| **ADMIN** | `/admin` (dashboard) · `/admin/floor-plan` · `/admin/classes` · `/admin/equipment` · `/dashboard/wrapped` |
+| **ADMIN** | `/admin` (dashboard) · `/admin/floor-plan` · `/admin/classes` · `/admin/equipment` · `/admin/hours` · `/dashboard/wrapped` |
 | **TRAINER** | `/admin` (trainer console) · `/admin/floor-plan` · `/admin/classes` · `/dashboard/wrapped` |
 | **CLIENT** | `/client` · `/client/classes` · `/client/equipment` · `/client/metrics` · `/client/workout-plan` · `/dashboard/wrapped` |
 

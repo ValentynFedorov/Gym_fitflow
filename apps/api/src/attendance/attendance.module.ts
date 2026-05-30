@@ -5,6 +5,7 @@ import { AttendanceController } from './attendance.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { WebsocketModule } from '../websocket/websocket.module';
 import { GamificationModule } from '../gamification/gamification.module';
+import { HoursModule } from '../hours/hours.module';
 import { RedisModule } from '../redis/redis.module';
 
 @Module({
@@ -12,6 +13,7 @@ import { RedisModule } from '../redis/redis.module';
     PrismaModule,
     WebsocketModule,
     GamificationModule,
+    HoursModule,
     RedisModule,
     JwtModule.register({}),
   ],

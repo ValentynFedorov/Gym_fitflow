@@ -13,6 +13,7 @@ async function main() {
   console.log('Clearing existing data...');
   await prisma.$executeRawUnsafe(`
     TRUNCATE TABLE
+      "gym_hours",
       "equipment_incidents",
       "trainer_ratings",
       "body_metrics",
@@ -30,6 +31,20 @@ async function main() {
       "users"
     RESTART IDENTITY CASCADE
   `);
+
+  // Default opening hours: weekdays 08:00-21:00, Saturday 09:00-20:00,
+  // Sunday closed. Admin can edit any of these via /admin/hours.
+  console.log('Seeding gym hours...');
+  const HOURS = [
+    { dayOfWeek: 0, openMin: 0,   closeMin: 0,    isClosed: true },  // Sun closed
+    { dayOfWeek: 1, openMin: 8*60, closeMin: 21*60, isClosed: false }, // Mon
+    { dayOfWeek: 2, openMin: 8*60, closeMin: 21*60, isClosed: false },
+    { dayOfWeek: 3, openMin: 8*60, closeMin: 21*60, isClosed: false },
+    { dayOfWeek: 4, openMin: 8*60, closeMin: 21*60, isClosed: false },
+    { dayOfWeek: 5, openMin: 8*60, closeMin: 21*60, isClosed: false },
+    { dayOfWeek: 6, openMin: 9*60, closeMin: 20*60, isClosed: false }, // Sat
+  ];
+  await prisma.gymHours.createMany({ data: HOURS });
 
   // Create zones
   console.log('Creating gym zones...');

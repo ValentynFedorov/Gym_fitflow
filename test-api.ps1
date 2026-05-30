@@ -192,6 +192,12 @@ if ($newInc.ok) {
 # Forbidden: trainer tries to resolve
 Test-Endpoint -Name 'incident PATCH as trainer (must 403)' -Method PATCH -Path "/equipment/incidents/00000000-0000-0000-0000-000000000000" -Token $trainer.token -Body @{ status = 'RESOLVED' } -ExpectStatus @(403, 404)
 
+Write-Host "`n[9b] Gym hours" -ForegroundColor Cyan
+Test-Endpoint -Name 'gym-hours list (public)' -Method GET -Path '/gym-hours' -Assert { param($o) if ($o.Count -ne 7) { throw 'expected 7 rows' } }
+Test-Endpoint -Name 'gym-hours status (public)' -Method GET -Path '/gym-hours/status'
+Test-Endpoint -Name 'gym-hours PUT (admin)'   -Method PUT -Path '/gym-hours/1' -Token $admin.token -Body @{ openMin = 480; closeMin = 1260; isClosed = $false }
+Test-Endpoint -Name 'gym-hours PUT as client (must 403)' -Method PUT -Path '/gym-hours/2' -Token $client.token -Body @{ openMin = 0; closeMin = 1440 } -ExpectStatus 403
+
 Write-Host "`n[10] Attendance" -ForegroundColor Cyan
 Test-Endpoint -Name 'my open visits' -Method GET -Path '/attendance/me/open' -Token $client.token
 # Try check-in then check-out (best-effort; might fail if zone full / no sub)

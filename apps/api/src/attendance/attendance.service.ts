@@ -6,6 +6,7 @@ import { Role, SubscriptionStatus, VisitStatus } from '@prisma/client';
 import { RedisService } from '../redis/redis.service';
 import { XpService } from '../gamification/xp.service';
 import { StreakService } from '../gamification/streak.service';
+import { HoursService } from '../hours/hours.service';
 import { AttendanceDomainEvent } from '../domain/attendance.events';
 
 @Injectable()
@@ -18,6 +19,7 @@ export class AttendanceService {
     private readonly redisService: RedisService,
     private readonly xpService: XpService,
     private readonly streakService: StreakService,
+    private readonly hoursService: HoursService,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -36,6 +38,16 @@ export class AttendanceService {
 
   async checkIn(userId: string, zoneId: string) {
     const now = new Date();
+
+    // Hard gate: the gym must be open right now. Without this, the check-in
+    // endpoint would happily issue a visit at 3am.
+    const status = await this.hoursService.isOpenAt(now);
+    if (!status.isOpen) {
+      const opens = status.opensAt
+        ? status.opensAt.toLocaleString('uk-UA', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })
+        : 'soon';
+      throw new BadRequestException(`Gym is closed (${status.reason}). Opens at ${opens}.`);
+    }
 
     const rateKey = `rate:checkin:${userId}:${now.toISOString().slice(0, 13)}`;
     const attempts = await this.redis.incr(rateKey);

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import ThemeToggle from "./ThemeToggle";
+import GymStatusBadge from "./GymStatusBadge";
 
 const CLIENT_LINKS = [
   { href: "/client",                label: "Overview" },
@@ -18,6 +19,7 @@ const ADMIN_LINKS = [
   { href: "/admin/floor-plan",     label: "Floor Plan" },
   { href: "/admin/classes",        label: "Classes" },
   { href: "/admin/equipment",      label: "Equipment" },
+  { href: "/admin/hours",          label: "Hours" },
   { href: "/dashboard/wrapped",    label: "Wrapped" },
 ];
 
@@ -59,6 +61,7 @@ export default function HeaderNav() {
           FitFlow <span className="text-accent-emerald">OS</span>
         </h1>
         <nav className="flex items-center gap-3 text-sm text-slate-300">
+          <GymStatusBadge />
           <ThemeToggle />
           <button
             onClick={() => router.push("/")}
@@ -93,6 +96,7 @@ export default function HeaderNav() {
             </button>
           );
         })}
+        <GymStatusBadge />
         <ThemeToggle />
         <button
           onClick={onLogout}

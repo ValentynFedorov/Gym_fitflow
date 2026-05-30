@@ -304,6 +304,19 @@ model TrainerRating {
   @@map("trainer_ratings")
 }
 
+// Gym opening hours per day of week. dayOfWeek follows JS getDay():
+// 0 = Sunday ... 6 = Saturday. openMin/closeMin are minutes from midnight.
+// One row per day; seeded with 7 rows so admin can edit without inserting.
+model GymHours {
+  dayOfWeek Int     @id              // 0..6
+  openMin   Int     @default(480)    // 08:00
+  closeMin  Int     @default(1260)   // 21:00
+  isClosed  Boolean @default(false)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("gym_hours")
+}
+
 // Body-metrics time series (client only). Values are optional so the user can
 // log just one of weightKg / chestCm / etc on any given day.
 model BodyMetric {
