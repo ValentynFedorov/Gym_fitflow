@@ -73,7 +73,14 @@ export default function WrappedPage() {
         slidesOrder.length],
     );
 
-  const userId = typeof window !== "undefined" ? localStorage.getItem("fitflow_userId") : null;
+  // Read userId only after mount — reading from localStorage during SSR
+  // returns null while the client immediately has a value, which causes a
+  // hydration mismatch on the <Heatmap> branch below.
+  const [userId, setUserId] = useState<string | null>(null);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setUserId(localStorage.getItem("fitflow_userId"));
+  }, []);
 
   return (
     <main className="space-y-6">

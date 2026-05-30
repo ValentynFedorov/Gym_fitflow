@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { EquipmentService } from './equipment.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -16,6 +16,12 @@ export class EquipmentController {
     return this.equipmentService.list(status);
   }
 
+  @Post()
+  @Roles(Role.ADMIN)
+  create(@Body() body: { name: string; type: string; serialNumber?: string; status?: string }) {
+    return this.equipmentService.create(body);
+  }
+
   @Patch(':id')
   @Roles(Role.ADMIN)
   update(
@@ -28,6 +34,12 @@ export class EquipmentController {
       status: body.status,
       nextServiceAt: body.nextServiceAt ? new Date(body.nextServiceAt) : null,
     });
+  }
+
+  @Delete(':id')
+  @Roles(Role.ADMIN)
+  remove(@Param('id') id: string) {
+    return this.equipmentService.remove(id);
   }
 
   // ---------- Incidents ----------

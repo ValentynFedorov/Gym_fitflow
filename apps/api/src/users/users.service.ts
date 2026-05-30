@@ -27,6 +27,14 @@ export class UsersService {
     });
   }
 
+  async listByRole(role?: 'ADMIN' | 'TRAINER' | 'CLIENT') {
+    return this.prisma.user.findMany({
+      where: role ? { role } : {},
+      select: { id: true, email: true, role: true, profileData: true },
+      orderBy: { email: 'asc' },
+    });
+  }
+
   async activity(userId: string) {
     const visits = await this.prisma.visit.findMany({
       where: { userId },

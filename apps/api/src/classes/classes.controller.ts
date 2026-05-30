@@ -50,9 +50,19 @@ export class ClassesController {
   @Put(':id')
   async update(
     @Param('id') id: string,
-    @Body() body: Partial<{ title: string; description: string; capacity: number }>,
+    @Body() body: Partial<{ title: string; description: string; capacity: number; startTime: string; endTime: string; zoneId: string; trainerId: string }>,
   ) {
-    return this.classesService.updateClass(id, body);
+    const data: any = { ...body };
+    if (body.startTime) data.startTime = new Date(body.startTime);
+    if (body.endTime)   data.endTime   = new Date(body.endTime);
+    return this.classesService.updateClass(id, data);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @Delete(':id')
+  async deleteClass(@Param('id') id: string) {
+    return this.classesService.deleteClass(id);
   }
 
   // Client: list upcoming classes personalized (whether booked/full)

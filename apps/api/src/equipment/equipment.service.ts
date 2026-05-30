@@ -25,6 +25,22 @@ export class EquipmentService {
     });
   }
 
+  async create(data: {
+    name: string;
+    type: string;
+    serialNumber?: string;
+    status?: string;
+  }) {
+    return this.prisma.equipment.create({
+      data: {
+        name: data.name,
+        type: data.type,
+        serialNumber: data.serialNumber,
+        status: data.status ?? 'ACTIVE',
+      },
+    });
+  }
+
   async update(
     id: string,
     data: Partial<{
@@ -35,6 +51,14 @@ export class EquipmentService {
     }>,
   ) {
     return this.prisma.equipment.update({ where: { id }, data });
+  }
+
+  async remove(id: string) {
+    await this.prisma.$transaction([
+      this.prisma.equipmentIncident.deleteMany({ where: { equipmentId: id } }),
+      this.prisma.equipment.delete({ where: { id } }),
+    ]);
+    return { ok: true };
   }
 
   // ---------- Incidents ----------

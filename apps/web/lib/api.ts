@@ -26,6 +26,13 @@ export async function apiFetch<T = any>(
     },
   });
   if (!res.ok) {
+    // If the token went stale (DB reset, JWT secret rotation, expired)
+    // wipe it so the user can log back in instead of being stuck on a 401.
+    if (res.status === 401 && typeof window !== 'undefined') {
+      localStorage.removeItem('fitflow_token');
+      localStorage.removeItem('fitflow_role');
+      localStorage.removeItem('fitflow_userId');
+    }
     let msg = `HTTP ${res.status}`;
     try {
       const body = await res.json();

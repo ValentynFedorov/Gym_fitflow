@@ -79,8 +79,18 @@ export class ClassesService {
     return this.prisma.class.create({ data });
   }
 
-  async updateClass(id: string, data: Partial<{ title: string; description: string; capacity: number }>) {
+  async updateClass(id: string, data: Partial<{ title: string; description: string; capacity: number; startTime: Date; endTime: Date; zoneId: string; trainerId: string }>) {
     return this.prisma.class.update({ where: { id }, data });
+  }
+
+  async deleteClass(id: string) {
+    // Wipe bookings + ratings first to satisfy FK; the class itself goes last.
+    await this.prisma.$transaction([
+      this.prisma.trainerRating.deleteMany({ where: { classId: id } }),
+      this.prisma.booking.deleteMany({ where: { classId: id } }),
+      this.prisma.class.delete({ where: { id } }),
+    ]);
+    return { ok: true };
   }
 
   // Client: list upcoming classes — show booked/waitlist position/full
