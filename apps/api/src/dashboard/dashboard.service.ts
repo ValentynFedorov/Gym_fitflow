@@ -21,10 +21,17 @@ export class DashboardService {
         this.prisma.visit.count(),
       ]);
 
+    // `check_in_time` is `timestamp without time zone` in UTC. We want hours
+    // in the gym's local timezone (Europe/Kyiv) so the chart matches the
+    // wall-clock schedule (e.g. opening at 08:00, not 05:00 UTC).
     const rawVisitsByHour = await this.prisma.$queryRawUnsafe<
       { hour: any; count: any }[]
     >(
-      'SELECT EXTRACT(HOUR FROM "check_in_time") as hour, COUNT(*) as count FROM "visits" GROUP BY hour ORDER BY hour;',
+      `SELECT EXTRACT(HOUR FROM ("check_in_time" AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Kyiv')) as hour,
+              COUNT(*) as count
+       FROM "visits"
+       GROUP BY hour
+       ORDER BY hour;`,
     );
 
     const visitsByHour = rawVisitsByHour.map((row) => ({
@@ -166,10 +173,13 @@ export class DashboardService {
     start.setHours(0, 0, 0, 0);
     start.setDate(start.getDate() - (days - 1));
 
+    // Bucket per local day (Europe/Kyiv) so a 23:30 Kyiv check-in counts
+    // for today, not tomorrow.
     const rows = await this.prisma.$queryRawUnsafe<
       { day: any; count: any }[]
     >(
-      `SELECT DATE_TRUNC('day', "check_in_time") as day, COUNT(*)::int as count
+      `SELECT DATE_TRUNC('day', ("check_in_time" AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Kyiv')) as day,
+              COUNT(*)::int as count
        FROM "visits"
        WHERE "check_in_time" >= $1::timestamp
          ${userId ? `AND "user_id" = $2` : ''}

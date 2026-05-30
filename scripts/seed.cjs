@@ -183,24 +183,48 @@ async function main() {
     },
   });
 
-  // Create some visits for analytics for the main client
+  // ---------- realistic visit-time generator ----------
+  // Mirrors the GymHours seed: weekdays 08-21, Sat 09-20, Sun closed.
+  // Adds a peak-hour bias around morning (08-10) and evening (17-20) so the
+  // dashboard's "visits by hour" chart doesn't look like uniform noise.
+  const OPEN_BY_DAY = { 0: null, 1: [8,21], 2: [8,21], 3: [8,21], 4: [8,21], 5: [8,21], 6: [9,20] };
+  function pickVisitTime(now, maxDaysAgo) {
+    for (let i = 0; i < 12; i++) {
+      const daysAgo = Math.floor(Math.random() * maxDaysAgo);
+      const d = new Date(now);
+      d.setDate(d.getDate() - daysAgo);
+      const range = OPEN_BY_DAY[d.getDay()];
+      if (!range) continue;                              // Sunday — skip
+      const [open, close] = range;
+      // 65% peak, 35% mid-day
+      let hour;
+      if (Math.random() < 0.65) {
+        hour = Math.random() < 0.5
+          ? open + Math.floor(Math.random() * 3)          // morning peak
+          : Math.max(open, close - 4) + Math.floor(Math.random() * 3); // evening peak
+      } else {
+        hour = open + Math.floor(Math.random() * (close - open - 1));
+      }
+      if (hour >= close) hour = close - 1;
+      d.setHours(hour, Math.floor(Math.random() * 60), 0, 0);
+      return d;
+    }
+    const d = new Date(now); d.setHours(12, 0, 0, 0); return d;
+  }
+
   console.log('Creating sample visits for main client...');
   const visitsData = [];
   for (let i = 0; i < 10; i++) {
-    const daysAgo = 1 + Math.floor(Math.random() * 7); // last week
-    const hour = 6 + Math.floor(Math.random() * 14); // between 6:00 and 20:00
-    const checkIn = new Date(now);
-    checkIn.setDate(checkIn.getDate() - daysAgo);
-    checkIn.setHours(hour, 0, 0, 0);
-
+    const checkIn  = pickVisitTime(now, 7);
     const checkOut = new Date(checkIn.getTime() + 60 * 60 * 1000); // +1h
-
+    const durationMin = Math.round((checkOut.getTime() - checkIn.getTime()) / 60000);
     visitsData.push({
       userId: client.id,
       subscriptionId: clientSubUnlimited.id,
       zoneId: i % 2 === 0 ? mainHall.id : cardioZone.id,
       checkInTime: checkIn,
       checkOutTime: checkOut,
+      durationMin,
       status: VisitStatus.COMPLETED,
     });
   }
@@ -225,16 +249,11 @@ async function main() {
 
     const visitCount = Math.floor(Math.random() * 15); // 0-14 visits
     for (let i = 0; i < visitCount; i++) {
-      const daysAgo = Math.floor(Math.random() * 30); // last 30 days
-      const hour = 6 + Math.floor(Math.random() * 14); // between 6:00 and 20:00
-      const checkIn = new Date(now);
-      checkIn.setDate(checkIn.getDate() - daysAgo);
-      checkIn.setHours(hour, 0, 0, 0);
-
+      const checkIn       = pickVisitTime(now, 30);
       const durationHours = 1 + Math.floor(Math.random() * 2); // 1-2h
-      const checkOut = new Date(checkIn.getTime() + durationHours * 60 * 60 * 1000);
-
-      const zoneId = Math.random() < 0.6 ? mainHall.id : cardioZone.id;
+      const checkOut      = new Date(checkIn.getTime() + durationHours * 60 * 60 * 1000);
+      const durationMin   = durationHours * 60;
+      const zoneId        = Math.random() < 0.6 ? mainHall.id : cardioZone.id;
 
       visitsData.push({
         userId: extra.id,
@@ -242,6 +261,7 @@ async function main() {
         zoneId,
         checkInTime: checkIn,
         checkOutTime: checkOut,
+        durationMin,
         status: VisitStatus.COMPLETED,
       });
     }
